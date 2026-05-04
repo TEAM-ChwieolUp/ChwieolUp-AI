@@ -20,3 +20,55 @@
 - `/health` 엔드포인트만 포함된 최소 FastAPI 앱이 준비되어 있습니다.
 - LLM 호출은 이후 `app/core/llm_client.py`의 `generate_json_with_llm(system_prompt, user_prompt)`만 통해 수행하도록 유지합니다.
 - 나머지 파일은 이후 구현을 위한 placeholder와 TODO 주석만 포함합니다.
+
+## Mail Stage Classify API
+
+`POST /ai/mail/stage-classify`
+
+메일 본문과 사용자가 정의한 전형 카테고리 목록을 받아, 가장 가까운 전형 단계를 추측합니다.
+
+```bash
+curl -X POST http://localhost:8001/ai/mail/stage-classify \
+  -H "Content-Type: application/json" \
+  -d '{
+    "mail_body": "안녕하세요. 카카오 채용팀입니다. 백엔드 개발자 포지션 1차 기술 인터뷰 일정을 안내드립니다.",
+    "user_stage_categories": [
+      {
+        "id": 1,
+        "name": "서류",
+        "description": "지원서 제출 및 서류 심사 단계",
+        "order": 1
+      },
+      {
+        "id": 2,
+        "name": "코딩테스트",
+        "description": "온라인 코딩테스트 및 과제 테스트",
+        "order": 2
+      },
+      {
+        "id": 3,
+        "name": "1차 면접",
+        "description": "기술면접 또는 실무진 면접",
+        "order": 3
+      }
+    ]
+  }'
+```
+
+예상 응답 형식:
+
+```json
+{
+  "predicted_stage": {
+    "id": 3,
+    "name": "1차 면접",
+    "order": 3
+  },
+  "confidence": 0.91,
+  "reason": "메일 본문에 1차 기술 인터뷰 일정이 명시되어 있어 1차 면접 단계와 가장 가깝습니다.",
+  "evidence": [
+    "1차 기술 인터뷰 일정을 안내드립니다"
+  ],
+  "needs_user_confirmation": true
+}
+```
