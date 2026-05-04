@@ -1,5 +1,7 @@
 from fastapi import FastAPI
 
+from app.routers.mail_stage import router as mail_stage_router
+
 
 app = FastAPI(title="ChwieolUp AI Server")
 
@@ -9,4 +11,4 @@ def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
-# TODO: Include feature routers after API schemas and services are implemented.
+app.include_router(mail_stage_router)
