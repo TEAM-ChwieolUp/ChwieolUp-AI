@@ -1,6 +1,6 @@
 # AI Server
 
-현재 디렉토리는 FastAPI 기반 AI 서버의 초기 골격만 생성된 상태입니다.
+현재 디렉토리는 FastAPI 기반 AI 서버의 MVP 기능을 구현 중인 상태입니다.
 
 현재 LLM 연동 대상은 서버 내부 Ollama HTTP API이며, 기본 모델은 `gemma4:e2b`입니다.
 
@@ -17,9 +17,10 @@
 
 ## 현재 상태
 
-- `/health` 엔드포인트만 포함된 최소 FastAPI 앱이 준비되어 있습니다.
-- LLM 호출은 이후 `app/core/llm_client.py`의 `generate_json_with_llm(system_prompt, user_prompt)`만 통해 수행하도록 유지합니다.
-- 나머지 파일은 이후 구현을 위한 placeholder와 TODO 주석만 포함합니다.
+- `GET /health`
+- `POST /ai/mail/stage-classify`
+- `POST /ai/retrospective/questions`
+- LLM 호출은 `app/core/llm_client.py`의 `generate_json_with_llm(system_prompt, user_prompt)`만 사용합니다.
 
 ## Mail Stage Classify API
 
@@ -70,5 +71,43 @@ curl -X POST http://localhost:8001/ai/mail/stage-classify \
     "1차 기술 인터뷰 일정을 안내드립니다"
   ],
   "needs_user_confirmation": true
+}
+```
+
+## Retrospective Questions API
+
+`POST /ai/retrospective/questions`
+
+채용공고명, 회사명, 직무, 전형 단계에 맞춰 회고 질문 세트를 생성합니다.
+
+```bash
+curl -X POST http://localhost:8001/ai/retrospective/questions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_id": 1,
+    "job_posting_title": "카카오 백엔드 개발자 채용",
+    "company_name": "카카오",
+    "job_role": "백엔드 개발자",
+    "process_stage": "1차 기술면접",
+    "question_count": 4
+  }'
+```
+
+예상 응답 형식:
+
+```json
+{
+  "question_set_title": "1차 기술면접 회고 질문",
+  "job_role": "백엔드 개발자",
+  "process_stage": "1차 기술면접",
+  "questions": [
+    {
+      "category": "technical_depth",
+      "question": "카카오 백엔드 기술면접에서 가장 답변이 부족했던 기술 개념은 무엇이었나요?",
+      "reason": "기술 보완 포인트를 찾기 위함입니다.",
+      "priority": "high",
+      "source_template_ids": ["q_backend_interview_001"]
+    }
+  ]
 }
 ```

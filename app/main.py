@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 
 from app.routers.mail_stage import router as mail_stage_router
+from app.routers.retrospective import router as retrospective_router
 
 
 app = FastAPI(title="ChwieolUp AI Server")
@@ -12,3 +13,4 @@ def health() -> dict[str, str]:
 
 
 app.include_router(mail_stage_router)
+app.include_router(retrospective_router)
