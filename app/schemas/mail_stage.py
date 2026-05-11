@@ -2,14 +2,31 @@ from __future__ import annotations
 
 from typing import Optional
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class UserStageCategory(BaseModel):
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "id": 3,
+                "name": "1차 면접",
+                "description": "기술면접 또는 실무진 면접",
+                "order": 3,
+            }
+        }
+    )
+
     id: int
-    name: str = Field(..., min_length=1)
-    description: Optional[str] = None
-    order: Optional[int] = None
+    name: str = Field(..., min_length=1, description="사용자가 정의한 전형 단계명입니다.")
+    description: Optional[str] = Field(
+        default=None,
+        description="해당 전형 단계에 대한 보조 설명입니다. LLM이 단계 의미를 이해하는 데 사용됩니다.",
+    )
+    order: Optional[int] = Field(
+        default=None,
+        description="칸반 또는 전형 목록에서의 순서입니다. 없을 수도 있습니다.",
+    )
 
     @field_validator("name")
     @classmethod
@@ -21,9 +38,51 @@ class UserStageCategory(BaseModel):
 
 
 class MailStageClassifyRequest(BaseModel):
-    mail_subject: str = ""
-    mail_body: str = Field(..., min_length=1)
-    user_stage_categories: list[UserStageCategory] = Field(..., min_length=1)
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "mail_subject": "[카카오] 1차 인터뷰 일정 안내",
+                "mail_body": "안녕하세요. 카카오 채용팀입니다. 백엔드 개발자 포지션 1차 기술 인터뷰 일정을 안내드립니다.",
+                "user_stage_categories": [
+                    {
+                        "id": 1,
+                        "name": "서류",
+                        "description": "지원서 제출 및 서류 심사 단계",
+                        "order": 1,
+                    },
+                    {
+                        "id": 2,
+                        "name": "코딩테스트",
+                        "description": "온라인 코딩테스트 및 과제 테스트",
+                        "order": 2,
+                    },
+                    {
+                        "id": 3,
+                        "name": "1차 면접",
+                        "description": "기술면접 또는 실무진 면접",
+                        "order": 3,
+                    },
+                ],
+            }
+        }
+    )
+
+    mail_subject: str = Field(
+        default="",
+        description="메일 제목입니다. 비어 있어도 되지만, 있으면 분류 정확도를 높이는 데 도움이 됩니다.",
+        examples=["[카카오] 1차 인터뷰 일정 안내"],
+    )
+    mail_body: str = Field(
+        ...,
+        min_length=1,
+        description="메일 본문입니다. 전형 단계 추론의 핵심 입력값입니다.",
+        examples=["안녕하세요. 카카오 채용팀입니다. 1차 기술 인터뷰 일정을 안내드립니다."],
+    )
+    user_stage_categories: list[UserStageCategory] = Field(
+        ...,
+        min_length=1,
+        description="사용자가 정의한 전체 전형 단계 목록입니다. AI는 반드시 이 목록 안에서만 단계를 선택해야 합니다.",
+    )
 
     @field_validator("mail_subject", "mail_body")
     @classmethod
@@ -32,14 +91,67 @@ class MailStageClassifyRequest(BaseModel):
 
 
 class PredictedStage(BaseModel):
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "id": 3,
+                "name": "1차 면접",
+                "order": 3,
+            }
+        }
+    )
+
     id: int
-    name: str = Field(..., min_length=1)
-    order: Optional[int] = None
+    name: str = Field(..., min_length=1, description="예측된 전형 단계명입니다.")
+    order: Optional[int] = Field(default=None, description="예측된 단계의 순서입니다.")
 
 
 class MailStageClassifyResponse(BaseModel):
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "predicted_stage": {
+                        "id": 3,
+                        "name": "1차 면접",
+                        "order": 3,
+                    },
+                    "confidence": 0.91,
+                    "reason": "메일 제목과 본문에 1차 인터뷰 및 기술 인터뷰 일정이 명시되어 있습니다.",
+                    "evidence": [
+                        "1차 인터뷰 일정 안내",
+                        "1차 기술 인터뷰 일정을 안내드립니다",
+                    ],
+                    "needs_user_confirmation": True,
+                },
+                {
+                    "predicted_stage": None,
+                    "confidence": 0.25,
+                    "reason": "메일 내용이 구체적인 전형 단계를 충분히 드러내지 않습니다.",
+                    "evidence": ["추후 전형 일정은 다시 안내드리겠습니다"],
+                    "needs_user_confirmation": True,
+                },
+            ]
+        }
+    )
+
     predicted_stage: Optional[PredictedStage] = None
-    confidence: float = Field(..., ge=0.0, le=1.0)
-    reason: str = Field(..., min_length=1)
-    evidence: list[str] = Field(default_factory=list)
-    needs_user_confirmation: bool
+    confidence: float = Field(
+        ...,
+        ge=0.0,
+        le=1.0,
+        description="AI가 판단한 신뢰도입니다. 0.0~1.0 사이 값으로 반환됩니다.",
+    )
+    reason: str = Field(
+        ...,
+        min_length=1,
+        description="왜 해당 전형 단계로 판단했는지에 대한 설명입니다.",
+    )
+    evidence: list[str] = Field(
+        default_factory=list,
+        description="메일 제목 또는 본문에서 직접 발췌한 근거 문구 목록입니다. 최대 3개까지 반환됩니다.",
+    )
+    needs_user_confirmation: bool = Field(
+        ...,
+        description="MVP 정책상 항상 true입니다. 클라이언트가 사용자 확인 후 적용해야 함을 의미합니다.",
+    )
