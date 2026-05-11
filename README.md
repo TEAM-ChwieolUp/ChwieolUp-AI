@@ -111,3 +111,76 @@ curl -X POST http://localhost:8001/ai/retrospective/questions \
   ]
 }
 ```
+
+## Kanban Move Recommend API
+
+`POST /ai/kanban/move-recommend`
+
+메일 내용과 현재 칸반 단계를 바탕으로 다른 단계로 이동이 필요한지 추천합니다.
+
+```bash
+curl -X POST http://localhost:8001/ai/kanban/move-recommend \
+  -H "Content-Type: application/json" \
+  -d '{
+    "mail_subject": "[카카오] 최종 인터뷰 일정 안내",
+    "mail_body": "안녕하세요. 최종 인터뷰 일정을 안내드립니다.",
+    "current_kanban_stage": {
+      "id": 2,
+      "name": "코딩테스트",
+      "description": "온라인 코딩테스트",
+      "order": 2
+    },
+    "user_kanban_stages": [
+      {
+        "id": 1,
+        "name": "서류",
+        "description": "지원서 제출 및 서류 심사 단계",
+        "order": 1
+      },
+      {
+        "id": 2,
+        "name": "코딩테스트",
+        "description": "온라인 코딩테스트",
+        "order": 2
+      },
+      {
+        "id": 3,
+        "name": "1차 면접",
+        "description": "실무진 면접",
+        "order": 3
+      },
+      {
+        "id": 4,
+        "name": "최종 면접",
+        "description": "임원 또는 최종 인터뷰",
+        "order": 4
+      }
+    ]
+  }'
+```
+
+예상 응답 형식:
+
+```json
+{
+  "recommend_move": true,
+  "from_stage": {
+    "id": 2,
+    "name": "코딩테스트",
+    "description": "온라인 코딩테스트",
+    "order": 2
+  },
+  "to_stage": {
+    "id": 4,
+    "name": "최종 면접",
+    "description": "임원 또는 최종 인터뷰",
+    "order": 4
+  },
+  "confidence": 0.88,
+  "reason": "메일 본문에 최종 인터뷰 일정이 명시되어 있습니다.",
+  "evidence": [
+    "최종 인터뷰 일정을 안내드립니다"
+  ],
+  "needs_user_confirmation": true
+}
+```
