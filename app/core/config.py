@@ -11,12 +11,14 @@ except ModuleNotFoundError:
         app_env: str = os.getenv("APP_ENV", "local")
         ollama_base_url: str = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
         ollama_model: str = os.getenv("OLLAMA_MODEL", "gemma4:e2b")
+        ollama_think: bool = os.getenv("OLLAMA_THINK", "false").lower() == "true"
 
 else:
     class Settings(BaseSettings):
         app_env: str = "local"
         ollama_base_url: str = "http://localhost:11434"
         ollama_model: str = "gemma4:e2b"
+        ollama_think: bool = False
 
         model_config = SettingsConfigDict(
             env_file=".env",

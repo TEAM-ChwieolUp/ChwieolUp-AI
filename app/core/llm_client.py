@@ -16,6 +16,7 @@ def generate_json_with_llm(system_prompt: str, user_prompt: str) -> dict[str, An
         "prompt": user_prompt,
         "stream": False,
         "format": "json",
+        "think": settings.ollama_think,
     }
 
     with httpx.Client(base_url=settings.ollama_base_url, timeout=60.0) as client:

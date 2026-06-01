@@ -3,6 +3,7 @@
 현재 디렉토리는 FastAPI 기반 AI 서버의 MVP 기능을 구현 중인 상태입니다.
 
 현재 LLM 연동 대상은 서버 내부 Ollama HTTP API이며, 기본 모델은 `gemma4:e2b`입니다.
+Ollama 요청에는 기본적으로 `think: false`를 전달해 thinking을 비활성화합니다.
 
 ## 구조
 
